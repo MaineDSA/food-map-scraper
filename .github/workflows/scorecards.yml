@@ -16,49 +16,6 @@ on:
 permissions: read-all
 
 jobs:
-<<<<<<< Updated upstream
-    analysis:
-        name: Scorecard analysis
-        runs-on: ubuntu-latest
-        permissions:
-            security-events: write
-            id-token: write
-
-        steps:
-            - name: Harden runner
-              uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
-              with:
-                  disable-sudo: true
-                  egress-policy: block
-                  allowed-endpoints: >
-                      api.deps.dev:443
-                      api.github.com:443
-                      api.osv.dev:443
-                      api.scorecard.dev:443
-                      fulcio.sigstore.dev:443
-                      github.com:443
-                      oss-fuzz-build-logs.storage.googleapis.com:443
-                      rekor.sigstore.dev:443
-                      tuf-repo-cdn.sigstore.dev:443
-                      www.bestpractices.dev:443
-
-            - name: Checkout code
-              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-              with:
-                  persist-credentials: false
-
-            - name: Run analysis
-              uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
-              with:
-                  results_file: results.sarif
-                  results_format: sarif
-                  publish_results: true
-
-            - name: Upload to code-scanning
-              uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
-              with:
-                  sarif_file: results.sarif
-=======
   scorecard:
     runs-on: ubuntu-latest
     permissions:
