@@ -100,3 +100,11 @@ ignore = [
     "D212",  # multi-line-summary-first-line (D212)
     "FIX002",  # line-contains-todo (FIX002)
 ]
+
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+module = [
+    "cloudscraper",
+]
+ignore_missing_imports = true
