@@ -39,9 +39,6 @@ jobs:
   ruff-check:
     runs-on: ubuntu-latest
 
-    permissions:
-      security-events: write
-
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
@@ -60,25 +57,11 @@ jobs:
           path: .ruff_cache
           key: ruff-${{ hashFiles('pyproject.toml') }}
 
-      - id: run-ruff-sarif
-        run: |
-          ruff check --output-format=sarif -o results.sarif .
-
-      - uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
-        if: ( success() || failure() ) && contains('["success", "failure"]', steps.run-ruff-sarif.outcome)
-        with:
-          sarif_file: results.sarif
-
       - id: run-ruff
-        if: failure() && contains('["failure"]', steps.run-ruff-sarif.outcome)
-        run: |
-          ruff check --output-format=github .
+        run: ruff check --output-format=github .
 
   bandit:
     runs-on: ubuntu-latest
-
-    permissions:
-      security-events: write
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
@@ -92,19 +75,8 @@ jobs:
 
       - run: uv pip install --system .[dev]
 
-      - id: run-bandit-sarif
-        run: |
-          bandit --confidence-level 'medium' --severity-level 'medium' --recursive 'src' --format 'sarif' --output 'results.sarif'
-
-      - uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
-        if: ( success() || failure() ) && contains('["success", "failure"]', steps.run-bandit-sarif.outcome)
-        with:
-          sarif_file: results.sarif
-
       - id: run-bandit
-        if: failure() && contains('["failure"]', steps.run-bandit-sarif.outcome)
-        run: |
-          bandit --confidence-level 'medium' --severity-level 'medium' --recursive 'src'
+        run: bandit --confidence-level 'medium' --severity-level 'medium' --recursive 'src'
 
   ssort:
     runs-on: ubuntu-latest
@@ -154,9 +126,6 @@ jobs:
       - ruff-check
       - ssort
 
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
@@ -175,8 +144,10 @@ jobs:
           path: .pre-commit-cache
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.toml') }}
 
-      - run: |
-          pre-commit install
-          pre-commit run --all-files
+      - run: pre-commit install
+        env:
+          PRE_COMMIT_HOME: .pre-commit-cache
+
+      - run: pre-commit run --all-files
         env:
           PRE_COMMIT_HOME: .pre-commit-cache
