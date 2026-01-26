@@ -9,6 +9,7 @@ This module scrapes restaurant information from portlandfoodmap.com by:
 
 import csv
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin
@@ -230,12 +231,13 @@ def main() -> None:
     all_restaurants = []
     logger.info("Extracting restaurant data...")
 
-    for url in tqdm(restaurant_urls, unit="restaurants"):
+    for url in tqdm(restaurant_urls, unit="restaurant"):
         schema_data = extract_schema_data(url)
 
         if schema_data:
             restaurant = Restaurant.from_schema(schema_data)
             all_restaurants.append(restaurant)
+        time.sleep(1)
 
     if not all_restaurants:
         logger.warning("No restaurant data extracted.")
