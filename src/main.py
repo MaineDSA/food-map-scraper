@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import cloudscraper
+import requests
 from bs4 import BeautifulSoup, ResultSet
 from tqdm import tqdm
 
@@ -28,20 +29,11 @@ OUTPUT_FILE = Path("portland_restaurants.csv")
 RESTAURANT_PATH_MARKER = "/restaurants/"
 
 # Create a cloudscraper instance that handles Cloudflare
-scraper = cloudscraper.create_scraper(
-    browser={
-        'browser': 'firefox',
-        'platform': 'windows',
-        'mobile': False
-    }
-)
+scraper = cloudscraper.create_scraper(browser={"browser": "firefox", "platform": "windows", "mobile": False})
 
 
 def fetch_url(url: str, error_context: str) -> bytes | None:
-    """
-    Fetch URL content with unified error handling.
-    """
-
+    """Fetch URL content with unified error handling."""
     try:
         response = scraper.get(url, timeout=15)
 
@@ -51,7 +43,7 @@ def fetch_url(url: str, error_context: str) -> bytes | None:
 
         return response.content
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         logger.error("%s error for %s (%s): %s", type(e).__name__, error_context, url, e)
         return None
 
@@ -63,7 +55,6 @@ def find_restaurant_schema(schema_scripts: ResultSet) -> dict | None:
     Searches for @type: "Restaurant" in the schema data, handling both
     single objects and arrays of objects.
     """
-
     for script in schema_scripts:
         try:
             data = json.loads(script.string)
@@ -86,7 +77,6 @@ def find_restaurant_schema(schema_scripts: ResultSet) -> dict | None:
 
 def extract_schema_data(url: str) -> dict | None:
     """Extract Restaurant schema.org data from a restaurant page."""
-
     data = fetch_url(url, "restaurant page")
     if not data:
         return None
@@ -99,7 +89,6 @@ def extract_schema_data(url: str) -> dict | None:
 
 def get_restaurant_links(list_url: str) -> list[str]:
     """Get all unique restaurant links from the list view page."""
-
     data = fetch_url(list_url, "list page")
     if not data:
         return []
@@ -128,7 +117,6 @@ def flatten_schema_data(schema: dict) -> dict[str, str]:
 
     Extracts common fields, address components, and geo coordinates.
     """
-
     flat = {}
 
     # Map schema.org field names to CSV column names
@@ -170,7 +158,6 @@ def flatten_schema_data(schema: dict) -> dict[str, str]:
 
 def save_to_csv(restaurants: list[dict], output_path: Path) -> None:
     """Save restaurant data to CSV file."""
-
     # Collect all unique field names
     fieldnames = sorted(set().union(*(r.keys() for r in restaurants)))
 
@@ -185,7 +172,6 @@ def save_to_csv(restaurants: list[dict], output_path: Path) -> None:
 
 def main() -> None:
     """Hey, I just met you, and this is crazy, but I'm the main function, so call me maybe."""
-
     # Fetch restaurant URLs
     logger.info("Fetching restaurant links...")
     restaurant_urls = get_restaurant_links(BASE_URL)
