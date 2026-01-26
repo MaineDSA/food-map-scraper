@@ -43,7 +43,6 @@ class Address:
     @classmethod
     def from_text(cls, address_text: str) -> "Address":
         """Parse address from text format: '263 Saint John Street, Portland, ME, USA'."""
-
         parts = [p.strip() for p in address_text.split(",")]
 
         address = cls()
@@ -64,7 +63,6 @@ class Address:
     @classmethod
     def from_schema(cls, schema_address: dict) -> "Address":
         """Create Address from schema.org address dictionary."""
-
         return cls(
             street_address=schema_address.get("streetAddress", ""),
             city=schema_address.get("addressLocality", ""),
@@ -86,7 +84,6 @@ class Restaurant:
     @classmethod
     def from_schema(cls, schema: dict) -> "Restaurant":
         """Create Restaurant from schema.org data."""
-
         street_address = ""
         if schema_address := schema.get("address"):
             if isinstance(schema_address, dict):
@@ -103,7 +100,6 @@ class Restaurant:
 
     def to_flat_dict(self) -> dict[str, str]:
         """Convert Restaurant to flat dictionary for CSV export."""
-
         return {
             "name": self.name,
             "street_address": self.street_address,
@@ -114,7 +110,6 @@ class Restaurant:
 
 def fetch_url(url: str, error_context: str) -> str | None:
     """Fetch URL content with unified error handling."""
-
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -137,7 +132,6 @@ def fetch_url(url: str, error_context: str) -> str | None:
 
 def extract_schema_data(url: str) -> dict | None:
     """Extract Restaurant schema.org data from a restaurant page using microdata."""
-
     data = fetch_url(url, "restaurant page")
     if not data:
         return None
@@ -175,7 +169,6 @@ def extract_schema_data(url: str) -> dict | None:
 
 def get_restaurant_links(list_url: str) -> list[str]:
     """Get all unique restaurant links from the list view page."""
-
     data = fetch_url(list_url, "list page")
     if not data:
         return []
@@ -200,7 +193,6 @@ def get_restaurant_links(list_url: str) -> list[str]:
 
 def save_to_csv(restaurants: list[Restaurant], output_path: Path) -> None:
     """Save restaurant data to CSV file."""
-
     if not restaurants:
         logger.warning("No restaurants to save.")
         return
@@ -219,7 +211,6 @@ def save_to_csv(restaurants: list[Restaurant], output_path: Path) -> None:
 
 def main() -> None:
     """Hey, I just met you, and this is crazy, but I'm the main function, so call me maybe."""
-
     logger.info("Fetching restaurant links...")
     restaurant_urls = get_restaurant_links(BASE_URL)
     logger.info("Found %d restaurant links", len(restaurant_urls))
