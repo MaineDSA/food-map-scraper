@@ -16,28 +16,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system .[dev]
 
       - id: cache-ruff
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: .ruff_cache
           key: ruff-${{ hashFiles('pyproject.toml') }}
@@ -52,29 +43,19 @@ jobs:
       security-events: write
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system .[dev]
 
       - id: cache-ruff
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: .ruff_cache
           key: ruff-${{ hashFiles('pyproject.toml') }}
@@ -83,7 +64,7 @@ jobs:
         run: |
           ruff check --output-format=sarif -o results.sarif .
 
-      - uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30
+      - uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
         if: ( success() || failure() ) && contains('["success", "failure"]', steps.run-ruff-sarif.outcome)
         with:
           sarif_file: results.sarif
@@ -100,24 +81,14 @@ jobs:
       security-events: write
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system .[dev]
 
@@ -125,7 +96,7 @@ jobs:
         run: |
           bandit --confidence-level 'medium' --severity-level 'medium' --recursive 'src' --format 'sarif' --output 'results.sarif'
 
-      - uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30
+      - uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
         if: ( success() || failure() ) && contains('["success", "failure"]', steps.run-bandit-sarif.outcome)
         with:
           sarif_file: results.sarif
@@ -139,23 +110,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system -e .[dev]
 
@@ -165,28 +127,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system -e .[dev]
 
       - id: cache-mypy
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: .mypy_cache
           key: ${{ runner.os }}-mypy-${{ hashFiles('pyproject.toml') }}
@@ -205,29 +158,19 @@ jobs:
       contents: write
 
     steps:
-      - uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            files.pythonhosted.org:443
-            github.com:443
-            proxy.golang.org:443
-            pypi.org:443
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
           python-version: '3.13'
           cache: pip
 
-      - uses: install-pinned/uv@259f91feb61b6e94766d7a1dbcd5f17335370e64
+      - uses: install-pinned/uv@b7f4803deede8b28e084308f6372bc0243ee13e4
 
       - run: uv pip install --system .[dev]
 
       - id: cache-pre-commit
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: .pre-commit-cache
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.toml') }}

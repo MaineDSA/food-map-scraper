@@ -1,21 +1,18 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-name: "CodeQL"
+name: CodeQL
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: ["main"]
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: 0 0 * * 1
+  workflow_dispatch:
 
 permissions: read-all
 
 jobs:
-  analyze:
+  code-ql:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
@@ -26,27 +23,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["python"]
+        language: ['python']
 
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
-        with:
-          egress-policy: audit
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      - uses: github/codeql-action/init@cf1bb45a277cb3c205638b2cd5c984db1c46a412
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      - uses: github/codeql-action/autobuild@cf1bb45a277cb3c205638b2cd5c984db1c46a412
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      - uses: github/codeql-action/analyze@cf1bb45a277cb3c205638b2cd5c984db1c46a412
         with:
-          category: "/language:${{matrix.language}}"
+          category: '/language:${{matrix.language}}'
