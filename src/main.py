@@ -8,87 +8,173 @@ This module scrapes restaurant information from portlandfoodmap.com by:
 """
 
 import csv
-import json
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin
 
 import cloudscraper
 import requests
-from bs4 import BeautifulSoup, ResultSet
+from bs4 import BeautifulSoup, Tag
 from tqdm import tqdm
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s : food-map-scraper:%(name)s : %(message)s")
 logger = logging.getLogger(__name__)
 
-# Constants
 HTTP_OK = 200
 BASE_URL = "https://www.portlandfoodmap.com/list-view/"
 OUTPUT_FILE = Path("portland_restaurants.csv")
 RESTAURANT_PATH_MARKER = "/restaurants/"
 
-# Create a cloudscraper instance that handles Cloudflare
 scraper = cloudscraper.create_scraper(browser={"browser": "firefox", "platform": "windows", "mobile": False})
 
 
-def fetch_url(url: str, error_context: str) -> bytes | None:
+@dataclass
+class Address:
+    """Represents a postal address."""
+
+    street_address: str = ""
+    city: str = ""
+    state: str = ""
+    postal_code: str = ""
+    country: str = ""
+
+    @classmethod
+    def from_text(cls, address_text: str) -> "Address":
+        """Parse address from text format: '263 Saint John Street, Portland, ME, USA'."""
+
+        parts = [p.strip() for p in address_text.split(",")]
+
+        address = cls()
+        if len(parts) >= 1:
+            address.street_address = parts[0]
+        if len(parts) >= 2:  # noqa: PLR2004
+            address.city = parts[1]
+        if len(parts) >= 3:  # noqa: PLR2004
+            # Split "ME USA" or similar
+            state_country = parts[2].split()
+            if len(state_country) >= 1:
+                address.state = state_country[0]
+            if len(state_country) >= 2:  # noqa: PLR2004
+                address.country = state_country[1]
+
+        return address
+
+    @classmethod
+    def from_schema(cls, schema_address: dict) -> "Address":
+        """Create Address from schema.org address dictionary."""
+
+        return cls(
+            street_address=schema_address.get("streetAddress", ""),
+            city=schema_address.get("addressLocality", ""),
+            state=schema_address.get("addressRegion", ""),
+            postal_code=schema_address.get("postalCode", ""),
+            country=schema_address.get("addressCountry", ""),
+        )
+
+
+@dataclass
+class Restaurant:
+    """Represents a restaurant with all its details."""
+
+    name: str = ""
+    street_address: str = ""
+    telephone: str = ""
+    url: str = ""
+
+    @classmethod
+    def from_schema(cls, schema: dict) -> "Restaurant":
+        """Create Restaurant from schema.org data."""
+
+        street_address = ""
+        if schema_address := schema.get("address"):
+            if isinstance(schema_address, dict):
+                street_address = schema_address.get("streetAddress", "")
+            elif isinstance(schema_address, Address):
+                street_address = schema_address.street_address
+
+        return cls(
+            name=schema.get("name", ""),
+            street_address=street_address,
+            telephone=schema.get("telephone", ""),
+            url=schema.get("url", ""),
+        )
+
+    def to_flat_dict(self) -> dict[str, str]:
+        """Convert Restaurant to flat dictionary for CSV export."""
+
+        return {
+            "name": self.name,
+            "street_address": self.street_address,
+            "telephone": self.telephone,
+            "url": self.url,
+        }
+
+
+def fetch_url(url: str, error_context: str) -> str | None:
     """Fetch URL content with unified error handling."""
+
     try:
-        response = scraper.get(url, timeout=15)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
+
+        response = scraper.get(url, headers=headers, timeout=15)
 
         if response.status_code != HTTP_OK:
             logger.error("HTTP %d error for %s: %s", response.status_code, error_context, url)
             return None
 
-        return response.content
+        return response.text
 
     except requests.exceptions.RequestException as e:
         logger.error("%s error for %s (%s): %s", type(e).__name__, error_context, url, e)
         return None
 
 
-def find_restaurant_schema(schema_scripts: ResultSet) -> dict | None:
-    """
-    Find Restaurant schema from JSON-LD script tags.
-
-    Searches for @type: "Restaurant" in the schema data, handling both
-    single objects and arrays of objects.
-    """
-    for script in schema_scripts:
-        try:
-            data = json.loads(script.string)
-
-            # Handle single object
-            if isinstance(data, dict) and data.get("@type") == "Restaurant":
-                return data
-
-            # Handle array of objects
-            if isinstance(data, list):
-                for item in data:
-                    if isinstance(item, dict) and item.get("@type") == "Restaurant":
-                        return item
-
-        except json.JSONDecodeError:
-            continue
-
-    return None
-
-
 def extract_schema_data(url: str) -> dict | None:
-    """Extract Restaurant schema.org data from a restaurant page."""
+    """Extract Restaurant schema.org data from a restaurant page using microdata."""
+
     data = fetch_url(url, "restaurant page")
     if not data:
         return None
 
     soup = BeautifulSoup(data, "html.parser")
-    schema_scripts = soup.find_all("script", type="application/ld+json")
+    article = soup.find("article", itemtype="http://schema.org/Restaurant")
+    if not article or not isinstance(article, Tag):
+        return None
 
-    return find_restaurant_schema(schema_scripts)
+    schema: dict = {"@type": "Restaurant"}
+
+    itemprop_fields = ["telephone"]
+    for item_field in itemprop_fields:
+        elem = article.find(itemprop=item_field)
+        if elem and isinstance(elem, Tag):
+            schema[item_field] = elem.get_text(strip=True)
+
+    # Special cases
+    name_elem = article.find("h1", class_="entry-title")
+    if name_elem and isinstance(name_elem, Tag):
+        schema["name"] = name_elem.get_text(strip=True)
+
+    url_elem = article.find("a", itemprop="url")
+    if url_elem and isinstance(url_elem, Tag):
+        href = url_elem.get("href")
+        if href:
+            schema["url"] = str(href)
+
+    address_elem = article.find(itemprop="address")
+    if address_elem and isinstance(address_elem, Tag):
+        schema["address"] = Address.from_text(address_elem.get_text(strip=True))
+
+    return schema
 
 
 def get_restaurant_links(list_url: str) -> list[str]:
     """Get all unique restaurant links from the list view page."""
+
     data = fetch_url(list_url, "list page")
     if not data:
         return []
@@ -111,68 +197,28 @@ def get_restaurant_links(list_url: str) -> list[str]:
     return links
 
 
-def flatten_schema_data(schema: dict) -> dict[str, str]:
-    """
-    Flatten schema.org Restaurant data into a flat dictionary for CSV.
-
-    Extracts common fields, address components, and geo coordinates.
-    """
-    flat = {}
-
-    # Map schema.org field names to CSV column names
-    simple_fields = {
-        "name": "name",
-        "description": "description",
-        "telephone": "telephone",
-        "priceRange": "priceRange",
-        "servesCuisine": "cuisine",
-        "url": "url",
-        "image": "image",
-    }
-
-    # Extract simple fields
-    for schema_key, csv_key in simple_fields.items():
-        if schema_key in schema:
-            value = schema[schema_key]
-            flat[csv_key] = ", ".join(str(v) for v in value) if isinstance(value, list) else str(value)
-
-    # Extract address components
-    if (address := schema.get("address")) and isinstance(address, dict):
-        address_mapping = {
-            "streetAddress": "street_address",
-            "addressLocality": "city",
-            "addressRegion": "state",
-            "postalCode": "postal_code",
-            "addressCountry": "country",
-        }
-        for schema_key, csv_key in address_mapping.items():
-            flat[csv_key] = address.get(schema_key, "")
-
-    # Extract geo coordinates
-    if (geo := schema.get("geo")) and isinstance(geo, dict):
-        flat["latitude"] = geo.get("latitude", "")
-        flat["longitude"] = geo.get("longitude", "")
-
-    return flat
-
-
-def save_to_csv(restaurants: list[dict], output_path: Path) -> None:
+def save_to_csv(restaurants: list[Restaurant], output_path: Path) -> None:
     """Save restaurant data to CSV file."""
-    # Collect all unique field names
-    fieldnames = sorted(set().union(*(r.keys() for r in restaurants)))
+
+    if not restaurants:
+        logger.warning("No restaurants to save.")
+        return
+
+    flat_restaurants = [r.to_flat_dict() for r in restaurants]
+    fieldnames = sorted(set().union(*(r.keys() for r in flat_restaurants)))
 
     logger.info("Writing %d restaurants to %s...", len(restaurants), output_path)
     with output_path.open("w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(restaurants)
+        writer.writerows(flat_restaurants)
 
     logger.info("Done! Data saved to %s", output_path)
 
 
 def main() -> None:
     """Hey, I just met you, and this is crazy, but I'm the main function, so call me maybe."""
-    # Fetch restaurant URLs
+
     logger.info("Fetching restaurant links...")
     restaurant_urls = get_restaurant_links(BASE_URL)
     logger.info("Found %d restaurant links", len(restaurant_urls))
@@ -181,7 +227,6 @@ def main() -> None:
         logger.warning("No restaurant links found. The page structure may have changed.")
         return
 
-    # Extract data from each restaurant page
     all_restaurants = []
     logger.info("Extracting restaurant data...")
 
@@ -189,15 +234,13 @@ def main() -> None:
         schema_data = extract_schema_data(url)
 
         if schema_data:
-            flat_data = flatten_schema_data(schema_data)
-            flat_data["source_url"] = url
-            all_restaurants.append(flat_data)
+            restaurant = Restaurant.from_schema(schema_data)
+            all_restaurants.append(restaurant)
 
     if not all_restaurants:
         logger.warning("No restaurant data extracted.")
         return
 
-    # Save results
     save_to_csv(all_restaurants, OUTPUT_FILE)
 
 
