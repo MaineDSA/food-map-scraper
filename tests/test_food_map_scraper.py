@@ -17,7 +17,7 @@ def vcr_scraper() -> cloudscraper.CloudScraper:
 
 @pytest.mark.vcr
 class TestScraperNetwork:
-    """Integration tests using recorded network interactions."""
+    """Test using recorded network interactions."""
 
     def test_get_restaurant_links(self, vcr_scraper: cloudscraper.CloudScraper) -> None:
         """Test fetching links using a recorded VCR cassette."""
@@ -53,6 +53,47 @@ class TestScraperNetwork:
         """Verify behavior when a page is missing or 404s."""
         data = extract_schema_data(f"{FOOD_MAP_URL_BASE}/non-existent-place-12345/", vcr_scraper)
         assert data is None
+
+
+class TestDataModels:
+    """Test edge cases of restauraunt and address parsing."""
+
+    @pytest.mark.parametrize(
+        ("address_str", "results"),
+        [
+            ("263 Saint John Street, Portland, ME, USA", ["263 Saint John Street", "Portland", "ME", "USA"]),
+            ("263 Saint John Street, Portland, ME USA", ["263 Saint John Street", "Portland", "ME", "USA"]),
+            ("263 Saint John Street, Portland, ME", ["263 Saint John Street", "Portland", "ME", ""]),
+        ],
+        ids=["Portland, ME, USA", "Portland, ME USA", "Portland, ME"],
+    )
+    def test_address_parsing(self, address_str: str, results: list[str]) -> None:
+        addr = Address.from_text(address_str)
+
+        assert addr.street_address == results[0]
+        assert addr.city == results[1]
+        assert addr.state == results[2]
+        assert addr.country == results[3]
+
+    def test_restaurant_from_schema(self) -> None:
+        schema = {
+            "name": "Scheme Milk Dairy Bar",
+            "telephone": "207-555-0123",
+            "url": "https://scheme-milk-dairy-bar.com",
+            "address": Address(street_address="123 Main St"),
+        }
+        res = Restaurant.from_schema(schema)
+
+        assert res.name == schema["name"]
+        assert res.telephone == schema["telephone"]
+        assert res.url == schema["url"]
+
+    def test_restaurant_from_schema_with_dict_address(self) -> None:
+        schema = {"name": "The Great Dict Tater", "address": {"streetAddress": "456 Dictionary Ave"}}
+        res = Restaurant.from_schema(schema)
+
+        assert res.name == "The Great Dict Tater"
+        assert res.street_address == "456 Dictionary Ave"
 
 
 class TestFileSystem:
