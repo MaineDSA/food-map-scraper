@@ -1,9 +1,10 @@
 # ruff: noqa: PLR2004
+from pathlib import Path
 
 import cloudscraper
 import pytest
 
-from src.main import BASE_URL, Address, extract_schema_data, get_restaurant_links, process_restaurants
+from src.main import BASE_URL, Address, Restaurant, extract_schema_data, get_restaurant_links, process_restaurants, save_to_csv
 
 FOOD_MAP_URL_BASE = "https://www.portlandfoodmap.com/restaurants"
 
@@ -52,3 +53,29 @@ class TestScraperNetwork:
         """Verify behavior when a page is missing or 404s."""
         data = extract_schema_data(f"{FOOD_MAP_URL_BASE}/non-existent-place-12345/", vcr_scraper)
         assert data is None
+
+
+class TestFileSystem:
+    """Test behavior of csv data export."""
+
+    def test_save_to_csv(self, tmp_path: Path) -> None:
+        output_file = tmp_path / "test_restaurants.csv"
+        restaurants = [
+            Restaurant(name="Place A", street_address="123 St", telephone="111", url="url1"),
+            Restaurant(name="Place B", street_address="456 St", telephone="222", url="url2"),
+        ]
+
+        save_to_csv(restaurants, output_file)
+
+        assert output_file.exists()
+        content = output_file.read_text()
+        assert "Place A" in content
+        assert "Place B" in content
+        assert "street_address" in content
+
+    def test_save_to_csv_no_results(self, tmp_path: Path) -> None:
+        output_file = tmp_path / "test_restaurants.csv"
+
+        save_to_csv([], output_file)
+
+        assert not output_file.exists()
