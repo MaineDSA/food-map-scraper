@@ -50,13 +50,18 @@ class Address:
             address.street_address = parts[0]
         if len(parts) >= 2:  # noqa: PLR2004
             address.city = parts[1]
+        if len(parts) >= 4:  # noqa: PLR2004
+            address.country = parts[3]
         if len(parts) >= 3:  # noqa: PLR2004
-            # Split "ME USA" or similar
-            state_country = parts[2].split()
-            if len(state_country) >= 1:
-                address.state = state_country[0]
-            if len(state_country) >= 2:  # noqa: PLR2004
-                address.country = state_country[1]
+            if not address.country:
+                # Split "ME USA" or similar
+                state_country = parts[2].split()
+                if len(state_country) >= 1:
+                    address.state = state_country[0]
+                if len(state_country) >= 2:  # noqa: PLR2004
+                    address.country = state_country[1]
+            else:
+                address.state = parts[2]
 
         return address
 
