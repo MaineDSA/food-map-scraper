@@ -3,18 +3,15 @@ interactions:
     body: null
     headers:
       Accept:
-      - text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+      - text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
       Accept-Encoding:
       - gzip, deflate
       Accept-Language:
       - en-US,en;q=0.5
-      Cookie:
-      - __cf_bm=6kfful6JzqMlwY9XSSPHIqi1aTidCZmGRyAXFoULEHQ-1772551199-1.0.1.1-fJz_lvF6Hh2QHvMVf.XlD8gBJPLkpJjSlIj.fSzeemfUeGuRigy40pKXIfSyQhtJ7Q7MrvBb3bIZ0Sefg40BwTbBgt4fP1p5_f5PxcrQd3U
       User-Agent:
-      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
-        Gecko) Chrome/120.0.0.0 Safari/537.36
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0
     method: GET
-    uri: https://www.portlandfoodmap.com/restaurants/non-existent-place/
+    uri: https://www.portlandfoodmap.com/restaurants/non-existent-place-12345/
   response:
     body:
       string: "<!doctype html>\n<html lang=\"en-US\" class=\"no-js\">\n<head>\n\t<script>(function(H){H.className=H.className.replace(/\\bno-js\\b/,'js')})(document.documentElement)</script>\n\t<meta
@@ -621,7 +618,7 @@ interactions:
         t;a.supports.everythingExceptFlag=a.supports.everythingExceptFlag&&!a.supports.flag,a.supports.everything||((t=a.source||{}).concatemoji?r(t.concatemoji):t.wpemoji&&t.twemoji&&(r(t.twemoji),r(t.wpemoji)))});\n//#
         sourceURL=https://www.portlandfoodmap.com/wp-includes/js/wp-emoji-loader.min.js\n/*
         ]]> */\n</script>\n\n<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var
-        d=b.createElement('script');d.innerHTML=\"window.__CF$cv$params={r:'9d699f6ba9a197e9',t:'MTc3MjU1MTIwMC4wMDAwMDA='};var
+        d=b.createElement('script');d.innerHTML=\"window.__CF$cv$params={r:'9d69cb0f6abe8f6a',t:'MTc3MjU1Mjk4OC4wMDAwMDA='};var
         a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);\";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var
         a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else
         if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var
@@ -630,7 +627,7 @@ interactions:
       CF-Cache-Status:
       - BYPASS
       CF-RAY:
-      - 9d699f6ba9a197e9-BOS
+      - 9d69cb0f6abe8f6a-BOS
       Cache-Control:
       - no-cache, must-revalidate, max-age=0, no-store, private
       Connection:
@@ -640,13 +637,17 @@ interactions:
       Content-Type:
       - text/html; charset=UTF-8
       Date:
-      - Tue, 03 Mar 2026 15:20:00 GMT
+      - Tue, 03 Mar 2026 15:49:48 GMT
       Expires:
       - Wed, 11 Jan 1984 05:00:00 GMT
       Link:
       - <https://www.portlandfoodmap.com/wp-json/>; rel="https://api.w.org/"
       Server:
       - cloudflare
+      Set-Cookie:
+      - __cf_bm=TK1QPAFlRYB8kHs9xTLp7ZPzbriRoY9XswSE_xvWUG0-1772552988-1.0.1.1-.RTFu1qGVn5CRFRTHjEzpTfhxKshFVrm7_vG3qPAgO4PLxla5ALOtY9jSblrr7u_rLK1JfoQ2ZbyeVYJlD9LOnsH7CY_lSgnW98ZkGIZBTY;
+        path=/; expires=Tue, 03-Mar-26 16:19:48 GMT; domain=.www.portlandfoodmap.com;
+        HttpOnly; Secure; SameSite=None
       Status:
       - 404 Not Found
       Transfer-Encoding:
