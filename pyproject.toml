@@ -24,8 +24,8 @@ dev = [
     {include-group = "lint"},
     {include-group = "pre-commit"},
     {include-group = "security"},
-    {include-group = "types"},
-]
+    {include-group = "test-coverage"},
+    {include-group = "types"},]
 lint = [
     "ruff==0.14.14",
     "ssort==0.16.0",
@@ -35,6 +35,15 @@ pre-commit = [
 ]
 security = [
     "bandit[sarif]==1.9.3",
+]
+test-coverage = [
+    "pytest-cov~=7.0.0",
+    {include-group = "test"},
+]
+test = [
+    "pytest~=9.0.2",
+    "pytest-recording~=0.13.4",
+    "pytest-xdist~=3.8.0",
 ]
 types = [
     "mypy~=1.19.1",
