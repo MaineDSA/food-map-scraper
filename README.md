@@ -1,0 +1,3 @@
+[![CodeQL](https://github.com/MaineDSA/food-map-scraper/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/MaineDSA/food-map-scraper/actions/workflows/github-code-scanning/codeql)
+[![Python checks](https://github.com/MaineDSA/food-map-scraper/actions/workflows/python.yml/badge.svg?branch=main)](https://github.com/MaineDSA/food-map-scraper/actions/workflows/python.yml)
+[![Coverage badge](https://raw.githubusercontent.com/MaineDSA/food-map-scraper/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/MaineDSA/food-map-scraper/blob/python-coverage-comment-action-data/htmlcov/index.html)
