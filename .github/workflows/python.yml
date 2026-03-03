@@ -17,3 +17,12 @@ jobs:
     permissions:
       contents: write
       security-events: write
+
+  test:
+    uses: bmos/bmos/.github/workflows/python-test.yml@main
+    needs: lint
+    with:
+      python_version: "['3.11', '3.12', '3.13', '3.14']"
+    permissions:
+      contents: write
+      pull-requests: write
