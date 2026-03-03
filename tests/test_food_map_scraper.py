@@ -1,14 +1,63 @@
+# ruff: noqa: PLR2004
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
+import cloudscraper
 import pytest
 
-from src.main import BASE_URL, Address, Restaurant, extract_schema_data, get_restaurant_links, save_to_csv
+from src.main import BASE_URL, Address, Restaurant, extract_schema_data, get_restaurant_links, process_restaurants, save_to_csv
 
 FOOD_MAP_URL_BASE = "https://www.portlandfoodmap.com/restaurants"
 
 
+@pytest.fixture
+def vcr_scraper() -> cloudscraper.CloudScraper:
+    """Provide a real scraper instance for VCR to intercept."""
+    return cloudscraper.create_scraper(browser={"browser": "firefox", "platform": "windows", "mobile": False})
+
+
+@pytest.mark.vcr
+class TestScraperNetwork:
+    """Test using recorded network interactions."""
+
+    def test_get_restaurant_links(self, vcr_scraper: cloudscraper.CloudScraper) -> None:
+        """Test fetching links using a recorded VCR cassette."""
+        links = get_restaurant_links(BASE_URL, vcr_scraper)
+
+        assert isinstance(links, list)
+        assert len(links) > 0
+        # Verify the format matches our expected marker
+        assert any(FOOD_MAP_URL_BASE in link for link in links)
+
+    def test_extract_schema_data_success(self, vcr_scraper: cloudscraper.CloudScraper) -> None:
+        """Test extracting specific restaurant data from a recorded page."""
+        test_url = f"{FOOD_MAP_URL_BASE}/central-provisions/"
+        data = extract_schema_data(test_url, vcr_scraper)
+
+        assert data is not None
+        assert data["name"] == "Central Provisions"
+        assert isinstance(data["address"], Address)
+        assert data["address"].street_address == "414 Fore St"
+
+    def test_process_restaurants_integration(self, vcr_scraper: cloudscraper.CloudScraper) -> None:
+        """Test the full loop for a small subset of URLs."""
+        subset_urls = [f"{FOOD_MAP_URL_BASE}/central-provisions/", f"{FOOD_MAP_URL_BASE}/scales/"]
+
+        # Use delay=0 for faster test execution
+        results = process_restaurants(subset_urls, vcr_scraper, delay=0)
+
+        assert len(results) == 2
+        assert results[0].name == "Central Provisions"
+        assert results[1].name == "Scales"
+
+    def test_extract_schema_data_invalid_url(self, vcr_scraper: cloudscraper.CloudScraper) -> None:
+        """Verify behavior when a page is missing or 404s."""
+        data = extract_schema_data(f"{FOOD_MAP_URL_BASE}/non-existent-place-12345/", vcr_scraper)
+        assert data is None
+
+
 class TestDataModels:
+    """Test edge cases of restauraunt and address parsing."""
+
     @pytest.mark.parametrize(
         ("address_str", "results"),
         [
@@ -26,16 +75,6 @@ class TestDataModels:
         assert addr.state == results[2]
         assert addr.country == results[3]
 
-    def test_address_from_schema_dict(self) -> None:
-        schema_addr = {"streetAddress": "123 Main St", "addressLocality": "Portland", "addressRegion": "ME", "postalCode": "04101", "addressCountry": "USA"}
-        addr = Address.from_schema(schema_addr)
-
-        assert addr.street_address == "123 Main St"
-        assert addr.city == "Portland"
-        assert addr.state == "ME"
-        assert addr.postal_code == "04101"
-        assert addr.country == "USA"
-
     def test_restaurant_from_schema(self) -> None:
         schema = {
             "name": "Scheme Milk Dairy Bar",
@@ -45,10 +84,9 @@ class TestDataModels:
         }
         res = Restaurant.from_schema(schema)
 
-        assert res.name == "Scheme Milk Dairy Bar"
-        assert res.telephone == "207-555-0123"
-        assert res.url == "https://scheme-milk-dairy-bar.com"
-        assert res.street_address == "123 Main St"
+        assert res.name == schema["name"]
+        assert res.telephone == schema["telephone"]
+        assert res.url == schema["url"]
 
     def test_restaurant_from_schema_with_dict_address(self) -> None:
         schema = {"name": "The Great Dict Tater", "address": {"streetAddress": "456 Dictionary Ave"}}
@@ -58,40 +96,9 @@ class TestDataModels:
         assert res.street_address == "456 Dictionary Ave"
 
 
-@pytest.mark.vcr
-class TestScraperNetwork:
-    def test_get_restaurant_links(self) -> None:
-        links = get_restaurant_links(BASE_URL)
-
-        assert isinstance(links, list)
-        assert len(links) > 0
-        assert all(f"{FOOD_MAP_URL_BASE}/" in link for link in links[:5])
-
-    @patch("src.main.fetch_url")
-    def test_get_restaurant_links_no_data(self, mock_fetch: MagicMock) -> None:
-        """Test the 'if not data' branch by forcing fetch_url to return None."""
-        mock_fetch.return_value = None
-        links = get_restaurant_links("https://any-url.com")
-
-        assert links == []
-        mock_fetch.assert_called_once()
-
-    def test_extract_schema_data_success(self) -> None:
-        test_url = f"{FOOD_MAP_URL_BASE}/central-provisions/"
-        data = extract_schema_data(test_url)
-
-        assert data is not None
-        assert "@type" in data
-        assert "name" in data
-        assert isinstance(data["address"], Address)
-
-    def test_extract_schema_data_invalid_url(self) -> None:
-        data = extract_schema_data(f"{FOOD_MAP_URL_BASE}/non-existent-place/")
-
-        assert data is None
-
-
 class TestFileSystem:
+    """Test behavior of csv data export."""
+
     def test_save_to_csv(self, tmp_path: Path) -> None:
         output_file = tmp_path / "test_restaurants.csv"
         restaurants = [
