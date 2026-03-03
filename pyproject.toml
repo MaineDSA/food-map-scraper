@@ -12,23 +12,35 @@ dependencies = [
     "cloudscraper~=1.2",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "bandit[sarif]==1.9.3",
-    "mypy~=1.19.1",
-    "pre-commit~=4.5.1",
-    "ruff==0.14.14",
-    "ssort==0.16.0",
-    "types-beautifulsoup4~=4.12",
-    "types-tqdm~=4.67",
-]
-
 [project.scripts]
 food-map-scraper = "src.main:main"
 
 [build-system]
 requires = ["setuptools>=80.0"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    {include-group = "lint"},
+    {include-group = "pre-commit"},
+    {include-group = "security"},
+    {include-group = "types"},
+]
+lint = [
+    "ruff==0.14.14",
+    "ssort==0.16.0",
+]
+pre-commit = [
+    "pre-commit~=4.5.1",
+]
+security = [
+    "bandit[sarif]==1.9.3",
+]
+types = [
+    "mypy~=1.19.1",
+    "types-beautifulsoup4~=4.12",
+    "types-tqdm~=4.67",
+]
 
 [tool]
 
