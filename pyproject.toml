@@ -25,7 +25,8 @@ dev = [
     {include-group = "pre-commit"},
     {include-group = "security"},
     {include-group = "test-coverage"},
-    {include-group = "types"},]
+    {include-group = "types"},
+]
 lint = [
     "ruff==0.15.4",
     "ssort==0.16.0",
